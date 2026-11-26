@@ -71,12 +71,39 @@
       <form id="order-form">
         <h3>Place Your Order</h3>
 
-        <label>Product</label>
-        <select id="product-select" name="product" required>
-          <option value="p1">Purified Water (5 Gallons)</option>
-          <option value="p2">Alkaline Water (5 Gallons)</option>
-          <option value="p3">Mineral Water (5 Gallons)</option>
-        </select>
+        <h3>Choose Your Water</h3>
+
+<div class="water-products">
+
+  <div class="water-card">
+    <img src="https://images.unsplash.com/photo-1602143407151-7111542de6e8?auto=format&fit=crop&w=500&q=80" alt="Purified water">
+    <h4>Purified Water</h4>
+    <p>Clean and refreshing</p>
+    <span>₱35 / 5 Gallons</span>
+  </div>
+
+  <div class="water-card">
+    <img src="https://images.unsplash.com/photo-1602143407151-7111542de6e8?auto=format&fit=crop&w=500&q=80" alt="Alkaline water">
+    <h4>Alkaline Water</h4>
+    <p>Fresh hydration</p>
+    <span>₱45 / 5 Gallons</span>
+  </div>
+
+  <div class="water-card">
+    <img src="https://images.unsplash.com/photo-1602143407151-7111542de6e8?auto=format&fit=crop&w=500&q=80" alt="Mineral water">
+    <h4>Mineral Water</h4>
+    <p>Everyday hydration</p>
+    <span>₱40 / 5 Gallons</span>
+  </div>
+
+</div>
+
+<label>Choose Product</label>
+<select id="product-select" name="product" required>
+  <option value="p1">Purified Water (5 Gallons)</option>
+  <option value="p2">Alkaline Water (5 Gallons)</option>
+  <option value="p3">Mineral Water (5 Gallons)</option>
+</select>
 
         <label>Quantity</label>
         <input type="number" name="quantity" min="1" value="1" required>
