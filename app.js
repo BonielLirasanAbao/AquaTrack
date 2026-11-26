@@ -1,4 +1,3 @@
-
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 import {
   getAuth,
@@ -19,13 +18,11 @@ import {
   onSnapshot,
   query,
   where,
-  orderBy,
   serverTimestamp
 } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 
-// AQUATRACK FIREBASE CONFIGURATION
 const firebaseConfig = {
-  apiKey: "AIzaSyB_obH4sPagwhRR39WfdrCqWI-iklx4Hu4",
+  apiKey: "AIzaSyB_ob4H4sPagwhRR39WfdrCqWI-iklx4Hu4",
   authDomain: "aquatrack-98c27.firebaseapp.com",
   projectId: "aquatrack-98c27",
   storageBucket: "aquatrack-98c27.firebasestorage.app",
@@ -45,139 +42,75 @@ const DEFAULT_PRODUCTS = [
   { id: "p3", name: "Mineral Water (5 Gallons)", price: 40 }
 ];
 
-let currentUser = null;
-let currentProfile = null;
-let products = [];
-let orders = [];
-let customers = [];
-let unsubscribers = [];
-
 const $ = selector => document.querySelector(selector);
 
-const peso = amount =>
-  "₱" + Number(amount || 0).toLocaleString("en-PH", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
-  });
+let currentUser = null;
+let products = DEFAULT_PRODUCTS;
+let orders = [];
+let customers = [];
+let listeners = [];
 
-function escapeHTML(value = "") {
-  return String(value).replace(/[&<>"']/g, char => ({
-    "&": "&amp;",
-    "<": "&lt;",
-    ">": "&gt;",
-    '"': "&quot;",
-    "'": "&#39;"
-  }[char]));
+function showView(view) {
+  $("#auth-view").classList.add("hidden");
+  $("#customer-view").classList.add("hidden");
+  $("#admin-view").classList.add("hidden");
+
+  $(view).classList.remove("hidden");
 }
 
 function toast(message) {
-  const element = $("#toast");
-  element.textContent = message;
-  element.classList.add("show");
-  setTimeout(() => element.classList.remove("show"), 2600);
+  const el = $("#toast");
+  el.textContent = message;
+  el.classList.remove("hidden");
+
+  setTimeout(() => el.classList.add("hidden"), 3500);
 }
 
-function showView(view) {
-  ["auth-view", "customer-view", "admin-view"].forEach(id => {
-    $("#" + id).classList.add("hidden");
+function cleanupListeners() {
+  listeners.forEach(unsubscribe => unsubscribe());
+  listeners = [];
+}
+
+function resetTabs() {
+  $("#login-form").classList.remove("hidden");
+  $("#register-form").classList.add("hidden");
+
+  document.querySelectorAll(".tab").forEach(tab => {
+    tab.classList.remove("active");
   });
 
-  $("#" + view).classList.remove("hidden");
-
-  $("#header-user").innerHTML = currentUser
-    ? `Signed in as <b>${escapeHTML(currentProfile?.name || currentUser.email)}</b> · <button id="logout" class="link-btn">Log out</button>`
-    : "";
-
-  if ($("#logout")) {
-    $("#logout").onclick = logout;
-  }
+  document.querySelector('[data-tab="login"]')
+    ?.classList.add("active");
 }
 
-function switchTab(tab) {
-  document.querySelectorAll(".tab").forEach(button => {
-    button.classList.toggle("active", button.dataset.tab === tab);
-  });
+/* LOGIN AND REGISTER TABS */
 
-  $("#login-form").classList.toggle("hidden", tab !== "login");
-  $("#register-form").classList.toggle("hidden", tab !== "register");
-}
+document.querySelectorAll(".tab").forEach(tab => {
+  tab.addEventListener("click", () => {
+    const selected = tab.dataset.tab;
 
-document.querySelectorAll(".tab").forEach(button => {
-  button.addEventListener("click", () => switchTab(button.dataset.tab));
-});
+    $("#login-form").classList.toggle("hidden", selected !== "login");
+    $("#register-form").classList.toggle("hidden", selected !== "register");
 
-function stopListeners() {
-  unsubscribers.forEach(unsubscribe => unsubscribe());
-  unsubscribers = [];
-}
-
-async function logout() {
-  stopListeners();
-  await signOut(auth);
-  toast("Logged out successfully.");
-}
-
-function stat(icon, label, value) {
-  return `<div class="stat-card">
-    <span class="stat-icon">${icon}</span>
-    <span class="stat-label">${label}</span>
-    <strong>${value}</strong>
-  </div>`;
-}
-
-function statusBadge(status) {
-  return `<span class="status ${String(status).replaceAll(" ", "")}">${escapeHTML(status)}</span>`;
-}
-
-// LOAD PRODUCTS
-async function loadProducts() {
-  const snapshot = await getDoc(doc(db, "settings", "products"));
-
-  if (!snapshot.exists()) {
-    products = DEFAULT_PRODUCTS;
-    return;
-  }
-
-  products = snapshot.data().items || DEFAULT_PRODUCTS;
-}
-
-async function initializeProducts() {
-  const productRef = doc(db, "settings", "products");
-  const snapshot = await getDoc(productRef);
-
-  if (!snapshot.exists()) {
-    await setDoc(productRef, {
-      items: DEFAULT_PRODUCTS
+    document.querySelectorAll(".tab").forEach(t => {
+      t.classList.remove("active");
     });
-  }
-}
 
-// LOGIN
-$("#login-form").addEventListener("submit", async event => {
-  event.preventDefault();
-
-  const form = new FormData(event.currentTarget);
-  const email = form.get("email").trim().toLowerCase();
-  const password = form.get("password");
-
-  try {
-    await signInWithEmailAndPassword(auth, email, password);
-    event.currentTarget.reset();
-  } catch (error) {
-    toast(error.message);
-  }
+    tab.classList.add("active");
+  });
 });
 
-// REGISTER CUSTOMER
+/* REGISTER */
+
 $("#register-form").addEventListener("submit", async event => {
   event.preventDefault();
 
-  const form = new FormData(event.currentTarget);
-  const name = form.get("name").trim();
-  const email = form.get("email").trim().toLowerCase();
-  const phone = form.get("phone").trim();
-  const address = form.get("address").trim();
-  const password = form.get("password");
+  const form = event.target;
+  const name = form.name.value.trim();
+  const email = form.email.value.trim();
+  const phone = form.phone.value.trim();
+  const address = form.address.value.trim();
+  const password = form.password.value;
 
   try {
     const result = await createUserWithEmailAndPassword(
@@ -195,346 +128,363 @@ $("#register-form").addEventListener("submit", async event => {
       createdAt: serverTimestamp()
     });
 
-    event.currentTarget.reset();
     toast("Account created successfully!");
+    form.reset();
+
   } catch (error) {
     toast(error.message);
   }
 });
 
-// CUSTOMER ORDER TOTAL
-function updateTotal() {
-  const product = products.find(item => item.id === $("#product-select").value);
-  const quantity = Math.max(1, Number($("#order-form").quantity.value || 1));
+/* LOGIN */
 
-  $("#order-total").textContent = product
-    ? peso(product.price * quantity)
-    : peso(0);
-}
-
-$("#product-select").addEventListener("change", updateTotal);
-$("#order-form").quantity.addEventListener("input", updateTotal);
-
-// SUBMIT ORDER
-$("#order-form").addEventListener("submit", async event => {
+$("#login-form").addEventListener("submit", async event => {
   event.preventDefault();
 
-  const form = new FormData(event.currentTarget);
-  const product = products.find(item => item.id === form.get("product"));
-  const quantity = Number(form.get("quantity"));
-  const address = form.get("address").trim();
+  const form = event.target;
+  const email = form.email.value.trim();
+  const password = form.password.value;
 
-  if (!product || quantity < 1 || quantity > 100 || !address) {
-    toast("Please check your order details.");
+  try {
+    await signInWithEmailAndPassword(auth, email, password);
+    toast("Login successful!");
+
+  } catch (error) {
+    toast("Login failed: " + error.message);
+  }
+});
+
+/* LOGOUT */
+
+$("#logout-btn").addEventListener("click", () => signOut(auth));
+$("#logout-admin-btn").addEventListener("click", () => signOut(auth));
+
+/* AUTHENTICATION CHECK */
+
+onAuthStateChanged(auth, async user => {
+  cleanupListeners();
+
+  currentUser = user;
+
+  if (!user) {
+    showView("#auth-view");
+    resetTabs();
+    return;
+  }
+
+  try {
+    const userRef = doc(db, "users", user.uid);
+    const userSnap = await getDoc(userRef);
+
+    if (!userSnap.exists()) {
+      await signOut(auth);
+      toast("Account profile not found.");
+      return;
+    }
+
+    const profile = userSnap.data();
+
+    if (user.email === ADMIN_EMAIL && profile.role === "admin") {
+      showView("#admin-view");
+      startAdminDashboard();
+    } else if (profile.role === "customer") {
+      showView("#customer-view");
+      $("#customer-name").textContent = profile.name || "Customer";
+      startCustomerDashboard(profile);
+    } else {
+      await signOut(auth);
+      toast("Unauthorized account.");
+    }
+
+  } catch (error) {
+    showView("#auth-view");
+    toast("Unable to load account: " + error.message);
+  }
+});
+
+/* LOAD PRODUCTS */
+
+async function loadProducts() {
+  const ref = doc(db, "settings", "products");
+  const snap = await getDoc(ref);
+
+  if (snap.exists()) {
+    products = snap.data().items || DEFAULT_PRODUCTS;
+  } else {
+    products = DEFAULT_PRODUCTS;
+  }
+
+  renderProductSelect();
+}
+
+function renderProductSelect() {
+  const select = $("#product-select");
+
+  select.innerHTML = products.map(product => `
+    <option value="${product.id}">
+      ${product.name} - ₱${product.price}
+    </option>
+  `).join("");
+
+  updateTotal();
+}
+
+function updateTotal() {
+  const form = $("#order-form");
+  if (!form) return;
+
+  const productId = form.elements.product.value;
+  const quantity = Number(form.elements.quantity.value) || 0;
+  const product = products.find(p => p.id === productId);
+
+  $("#order-total").textContent =
+    "₱" + (product ? product.price * quantity : 0);
+}
+
+$("#order-form").addEventListener("input", updateTotal);
+$("#order-form").addEventListener("change", updateTotal);
+
+/* CUSTOMER DASHBOARD */
+
+async function startCustomerDashboard(profile) {
+  await loadProducts();
+
+  const q = query(
+    collection(db, "orders"),
+    where("customerId", "==", currentUser.uid)
+  );
+
+  const unsubscribe = onSnapshot(q, snapshot => {
+    orders = snapshot.docs.map(d => ({
+      id: d.id,
+      ...d.data()
+    }));
+
+    renderCustomerOrders();
+    renderCustomerStats();
+  }, error => {
+    toast(error.message);
+  });
+
+  listeners.push(unsubscribe);
+
+  $("#order-form").elements.address.value = profile.address || "";
+
+  $("#order-form").addEventListener("submit", placeOrder);
+}
+
+async function placeOrder(event) {
+  event.preventDefault();
+
+  const form = event.target;
+  const product = products.find(p => p.id === form.elements.product.value);
+  const quantity = Number(form.elements.quantity.value);
+
+  if (!product || quantity < 1) {
+    toast("Please select a valid product and quantity.");
+    return;
+  }
+
+  const orderType = form.elements.orderType.value;
+  const payment = form.elements.payment.value;
+  const address = form.elements.address.value.trim();
+
+  if (orderType === "Delivery" && !address) {
+    toast("Please enter your delivery address.");
     return;
   }
 
   try {
     await addDoc(collection(db, "orders"), {
       customerId: currentUser.uid,
-      customerName: currentProfile.name,
-      phone: currentProfile.phone || "",
+      customerName: $("#customer-name").textContent,
+      phone: "",
       productId: product.id,
       productName: product.name,
       quantity,
-      orderType: form.get("orderType"),
-      payment: form.get("payment"),
+      orderType,
+      payment,
       address,
       total: product.price * quantity,
       status: "Pending",
       createdAt: serverTimestamp()
     });
 
-    event.currentTarget.reset();
-    $("#order-address").value = currentProfile.address || "";
+    toast("Order placed successfully!");
+    form.elements.quantity.value = 1;
     updateTotal();
-    toast("Your order has been submitted!");
+
   } catch (error) {
-    toast(error.message);
+    toast("Order failed: " + error.message);
   }
-});
-
-// CUSTOMER DASHBOARD
-function renderCustomer() {
-  $("#customer-name").textContent =
-    currentProfile.name.split(" ")[0];
-
-  $("#order-address").value = currentProfile.address || "";
-
-  $("#product-select").innerHTML = products.map(product =>
-    `<option value="${escapeHTML(product.id)}">
-      ${escapeHTML(product.name)} — ${peso(product.price)}
-    </option>`
-  ).join("");
-
-  updateTotal();
-
-  const myOrders = orders.filter(order =>
-    order.customerId === currentUser.uid
-  );
-
-  $("#customer-stats").innerHTML =
-    stat("📦", "Total orders", myOrders.length) +
-    stat("⏳", "Pending", myOrders.filter(o => o.status === "Pending").length) +
-    stat(
-      "💰",
-      "Completed value",
-      peso(myOrders
-        .filter(o => ["Delivered", "Completed"].includes(o.status))
-        .reduce((sum, o) => sum + Number(o.total), 0))
-    );
-
-  $("#customer-orders").innerHTML = myOrders.length
-    ? myOrders.map(order => `
-      <div class="order-card">
-        <div class="order-top">
-          <div>
-            <strong>${escapeHTML(order.productName)}</strong>
-            <div class="order-id">${escapeHTML(order.id)}</div>
-          </div>
-          ${statusBadge(order.status)}
-        </div>
-        <div class="order-meta">
-          ${order.quantity} gallon(s) · ${escapeHTML(order.orderType)} · ${escapeHTML(order.payment)}
-          <br>Total: <b>${peso(order.total)}</b>
-          <br>${escapeHTML(order.address)}
-        </div>
-      </div>
-    `).join("")
-    : `<div class="empty-state">You haven't placed an order yet.</div>`;
 }
 
-// ADMIN DASHBOARD
-function renderAdmin() {
-  const sortedOrders = [...orders].sort((a, b) =>
-    (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0)
-  );
+function renderCustomerOrders() {
+  const container = $("#customer-orders");
 
-  $("#admin-stats").innerHTML =
-    stat("🧾", "Total orders", sortedOrders.length) +
-    stat("⏳", "Pending orders",
-      sortedOrders.filter(o => o.status === "Pending").length) +
-    stat(
-      "💵",
-      "Recorded completed sales",
-      peso(sortedOrders
-        .filter(o => ["Delivered", "Completed"].includes(o.status))
-        .reduce((sum, o) => sum + Number(o.total), 0))
-    );
+  if (!orders.length) {
+    container.innerHTML = "<p>No orders yet.</p>";
+    return;
+  }
 
-  renderAdminOrders();
-
-  $("#product-admin-list").innerHTML = products.map(product => `
-    <div class="product-row">
-      <span><b>${escapeHTML(product.name)}</b></span>
-      <span>
-        <input class="price-edit" type="number" min="1" step=".01"
-          value="${product.price}" data-price="${escapeHTML(product.id)}">
-        <button class="btn primary save-price"
-          data-id="${escapeHTML(product.id)}"
-          style="padding:8px 10px">Save</button>
-      </span>
-    </div>
-  `).join("");
-
-  $("#customer-admin-list").innerHTML = customers.length
-    ? customers.map(customer => `
-      <div class="customer-row">
-        <span>
-          <b>${escapeHTML(customer.name)}</b><br>
-          <span class="muted">${escapeHTML(customer.email)}</span>
-        </span>
-        <span class="muted">${escapeHTML(customer.phone || "")}</span>
+  container.innerHTML = [...orders]
+    .sort((a, b) => {
+      const ta = a.createdAt?.toMillis?.() || 0;
+      const tb = b.createdAt?.toMillis?.() || 0;
+      return tb - ta;
+    })
+    .map(order => `
+      <div class="order-card panel">
+        <h4>${order.productName || "Water"}</h4>
+        <p>Quantity: ${order.quantity}</p>
+        <p>Total: ₱${order.total}</p>
+        <p>Type: ${order.orderType}</p>
+        <p>Payment: ${order.payment}</p>
+        <p class="status ${order.status?.replace(/\s/g, "")}">
+          ${order.status}
+        </p>
       </div>
-    `).join("")
-    : `<p class="muted">No registered customers yet.</p>`;
+    `).join("");
+}
 
-  document.querySelectorAll(".save-price").forEach(button => {
-    button.onclick = async () => {
-      const id = button.dataset.id;
-      const value = Number(document.querySelector(
-        `[data-price="${id}"]`
-      ).value);
+function renderCustomerStats() {
+  const completed = orders.filter(o => o.status === "Completed").length;
+  const pending = orders.filter(o => o.status === "Pending").length;
 
-      if (value <= 0) {
-        toast("Enter a valid price.");
-        return;
-      }
+  $("#customer-stats").innerHTML = `
+    <div class="stats-grid">
+      <div class="stat-card">
+        <h3>${orders.length}</h3>
+        <p>Total Orders</p>
+      </div>
+      <div class="stat-card">
+        <h3>${pending}</h3>
+        <p>Pending</p>
+      </div>
+      <div class="stat-card">
+        <h3>${completed}</h3>
+        <p>Completed</p>
+      </div>
+    </div>
+  `;
+}
 
-      try {
-        const updated = products.map(product =>
-          product.id === id
-            ? { ...product, price: value }
-            : product
-        );
+/* ADMIN DASHBOARD */
 
-        await updateDoc(doc(db, "settings", "products"), {
-          items: updated
-        });
+async function startAdminDashboard() {
+  await loadProducts();
 
-        toast("Product price updated.");
-      } catch (error) {
-        toast(error.message);
-      }
-    };
-  });
+  const ordersUnsub = onSnapshot(collection(db, "orders"), snapshot => {
+    orders = snapshot.docs.map(d => ({
+      id: d.id,
+      ...d.data()
+    }));
+
+    renderAdminOrders();
+    renderAdminStats();
+  }, error => toast(error.message));
+
+  const usersUnsub = onSnapshot(collection(db, "users"), snapshot => {
+    customers = snapshot.docs.map(d => ({
+      id: d.id,
+      ...d.data()
+    })).filter(u => u.role === "customer");
+
+    renderAdminCustomers();
+  }, error => toast(error.message));
+
+  listeners.push(ordersUnsub, usersUnsub);
 }
 
 function renderAdminOrders() {
+  const container = $("#admin-orders");
   const search = $("#order-search").value.toLowerCase();
   const filter = $("#status-filter").value;
 
-  const filteredOrders = [...orders]
-    .sort((a, b) =>
-      (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0)
-    )
-    .filter(order =>
-      (filter === "All" || order.status === filter) &&
-      [order.id, order.customerName, order.productName]
-        .join(" ")
-        .toLowerCase()
-        .includes(search)
-    );
+  const filtered = orders.filter(order => {
+    const matchesSearch =
+      (order.customerName || "").toLowerCase().includes(search) ||
+      (order.productName || "").toLowerCase().includes(search);
 
-  $("#admin-orders").innerHTML = filteredOrders.map(order => `
-    <tr>
-      <td><b>${escapeHTML(order.id)}</b></td>
-      <td>
-        <b>${escapeHTML(order.customerName)}</b><br>
-        <span class="muted">${escapeHTML(order.phone || "")}</span>
-      </td>
-      <td>
-        ${escapeHTML(order.productName)}<br>
-        <span class="muted">${order.quantity} · ${escapeHTML(order.orderType)}</span>
-      </td>
-      <td>${escapeHTML(order.payment)}</td>
-      <td><b>${peso(order.total)}</b></td>
-      <td>${statusBadge(order.status)}</td>
-      <td>
-        <select class="small-select status-change" data-id="${escapeHTML(order.id)}">
-          ${[
-            "Pending", "Accepted", "Preparing",
-            "Out for delivery", "Ready for pickup",
-            "Delivered", "Completed", "Rejected"
-          ].map(status => `
-            <option ${order.status === status ? "selected" : ""}>${status}</option>
-          `).join("")}
-        </select>
-      </td>
-    </tr>
-  `).join("");
+    const matchesStatus = filter === "all" || order.status === filter;
 
-  $("#empty-admin").classList.toggle("hidden", filteredOrders.length > 0);
-
-  document.querySelectorAll(".status-change").forEach(select => {
-    select.onchange = async () => {
-      try {
-        await updateDoc(doc(db, "orders", select.dataset.id), {
-          status: select.value
-        });
-
-        toast("Order status updated.");
-      } catch (error) {
-        toast(error.message);
-      }
-    };
+    return matchesSearch && matchesStatus;
   });
+
+  $("#empty-admin").classList.toggle("hidden", filtered.length > 0);
+
+  container.innerHTML = filtered.map(order => `
+    <div class="order-card panel">
+      <h4>${order.customerName || "Customer"}</h4>
+      <p>${order.productName}</p>
+      <p>Quantity: ${order.quantity}</p>
+      <p>Total: ₱${order.total}</p>
+      <p>Address: ${order.address || "Pick-up"}</p>
+      <p>Payment: ${order.payment}</p>
+      <p class="status ${order.status?.replace(/\s/g, "")}">
+        ${order.status}
+      </p>
+
+      <select onchange="window.updateOrderStatus('${order.id}', this.value)">
+        ${["Pending", "Processing", "Out for delivery", "Completed", "Cancelled"]
+          .map(status => `
+            <option value="${status}" ${order.status === status ? "selected" : ""}>
+              ${status}
+            </option>
+          `).join("")}
+      </select>
+    </div>
+  `).join("");
 }
+
+window.updateOrderStatus = async (orderId, status) => {
+  try {
+    await updateDoc(doc(db, "orders", orderId), { status });
+    toast("Order status updated.");
+  } catch (error) {
+    toast(error.message);
+  }
+};
 
 $("#order-search").addEventListener("input", renderAdminOrders);
 $("#status-filter").addEventListener("change", renderAdminOrders);
 
-// REAL-TIME FIRESTORE LISTENERS
-function startCustomerListeners() {
-  const ordersQuery = query(
-    collection(db, "orders"),
-    where("customerId", "==", currentUser.uid)
-  );
+function renderAdminStats() {
+  const pending = orders.filter(o => o.status === "Pending").length;
+  const completed = orders.filter(o => o.status === "Completed").length;
+  const revenue = orders
+    .filter(o => o.status === "Completed")
+    .reduce((sum, o) => sum + Number(o.total || 0), 0);
 
-  unsubscribers.push(onSnapshot(ordersQuery, snapshot => {
-    orders = snapshot.docs.map(item => ({
-      id: item.id,
-      ...item.data()
-    }));
-
-    renderCustomer();
-  }, error => toast(error.message)));
+  $("#admin-stats").innerHTML = `
+    <div class="stats-grid">
+      <div class="stat-card">
+        <h3>${orders.length}</h3>
+        <p>Total Orders</p>
+      </div>
+      <div class="stat-card">
+        <h3>${pending}</h3>
+        <p>Pending Orders</p>
+      </div>
+      <div class="stat-card">
+        <h3>${completed}</h3>
+        <p>Completed</p>
+      </div>
+      <div class="stat-card">
+        <h3>₱${revenue}</h3>
+        <p>Revenue</p>
+      </div>
+    </div>
+  `;
 }
 
-function startAdminListeners() {
-  unsubscribers.push(onSnapshot(collection(db, "orders"), snapshot => {
-    orders = snapshot.docs.map(item => ({
-      id: item.id,
-      ...item.data()
-    }));
-
-    renderAdmin();
-  }, error => toast(error.message)));
-
-  unsubscribers.push(onSnapshot(collection(db, "users"), snapshot => {
-    customers = snapshot.docs
-      .map(item => ({ id: item.id, ...item.data() }))
-      .filter(user => user.role === "customer");
-
-    renderAdmin();
-  }, error => toast(error.message)));
-
-  unsubscribers.push(onSnapshot(doc(db, "settings", "products"), snapshot => {
-    products = snapshot.exists()
-      ? snapshot.data().items || DEFAULT_PRODUCTS
-      : DEFAULT_PRODUCTS;
-
-    renderAdmin();
-  }, error => toast(error.message)));
+function renderAdminCustomers() {
+  $("#customer-admin-list").innerHTML = customers.map(customer => `
+    <div class="panel">
+      <h4>${customer.name || "Customer"}</h4>
+      <p>${customer.email || ""}</p>
+      <p>${customer.phone || ""}</p>
+      <p>${customer.address || ""}</p>
+    </div>
+  `).join("");
 }
-
-// AUTHENTICATION STATE
-onAuthStateChanged(auth, async user => {
-  stopListeners();
-  currentUser = user;
-  currentProfile = null;
-  orders = [];
-  customers = [];
-
-  if (!user) {
-    showView("auth-view");
-    switchTab("login");
-    return;
-  }
-
-  try {
-    const profileSnapshot = await getDoc(doc(db, "users", user.uid));
-
-    if (!profileSnapshot.exists()) {
-      await signOut(auth);
-      toast("User profile not found.");
-      return;
-    }
-
-    currentProfile = profileSnapshot.data();
-
-    // ADMIN ACCESS IS ALSO PROTECTED BY FIRESTORE SECURITY RULES
-    const isAdmin = user.email?.toLowerCase() === ADMIN_EMAIL;
-
-    if (isAdmin) {
-      await initializeProducts();
-      await loadProducts();
-      showView("admin-view");
-      startAdminListeners();
-    } else {
-      if (currentProfile.role !== "customer") {
-        await signOut(auth);
-        toast("Account access is not authorized.");
-        return;
-      }
-
-      await loadProducts();
-      showView("customer-view");
-      renderCustomer();
-      startCustomerListeners();
-    }
-  } catch (error) {
-    console.error(error);
-    toast(error.message);
-  }
-});
