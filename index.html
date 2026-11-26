@@ -1,200 +1,145 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AquaTrack | Water Refilling Station</title>
+  <title>AquaTrack</title>
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 
-<header>
-  <h1>AquaTrack</h1>
-  <div id="header-user"></div>
-</header>
+  <header class="header">
+    <h1>AquaTrack</h1>
+    <p>Fresh water, delivered with care.</p>
+  </header>
 
-<!-- AUTHENTICATION -->
-<main id="auth-view">
+  <!-- LOGIN / REGISTER -->
+  <main id="auth-view" class="auth-container">
+    <div class="panel">
 
-  <div class="auth-container">
-    <div style="text-align:center;margin-bottom:24px">
-      <div style="font-size:55px">💧</div>
-      <h2>Welcome to AquaTrack!</h2>
-      <p style="color:#78909c">
-        Your water, your convenience.
-      </p>
-    </div>
-
-    <div class="tabs">
-      <button class="tab active" data-tab="login">Login</button>
-      <button class="tab" data-tab="register">Create Account</button>
-    </div>
-
-    <!-- LOGIN -->
-    <form id="login-form">
-      <label>Email address</label>
-      <input type="email" name="email" placeholder="Enter your email" required>
-
-      <label>Password</label>
-      <input type="password" name="password" placeholder="Enter your password" required>
-
-      <button type="submit">Login to AquaTrack</button>
-    </form>
-
-    <!-- REGISTER -->
-    <form id="register-form" class="hidden">
-      <label>Full name</label>
-      <input type="text" name="name" placeholder="Your full name" required>
-
-      <label>Email address</label>
-      <input type="email" name="email" placeholder="Your email" required>
-
-      <label>Phone number</label>
-      <input type="text" name="phone" placeholder="Your contact number" required>
-
-      <label>Delivery address</label>
-      <textarea name="address" placeholder="Your complete address" required></textarea>
-
-      <label>Password</label>
-      <input type="password" name="password" placeholder="Create a password" minlength="6" required>
-
-      <button type="submit">Create my account</button>
-    </form>
-
-    <p style="text-align:center;color:#78909c;font-size:13px;margin-top:20px">
-      💙 Clean water made easy.
-    </p>
-  </div>
-
-</main>
-
-<!-- CUSTOMER DASHBOARD -->
-<main id="customer-view" class="hidden">
-
-  <section class="welcome-section">
-    <h2>Hello, <span id="customer-name">Customer</span>! 👋</h2>
-    <p>Ready to order fresh and clean water today?</p>
-  </section>
-
-  <section id="customer-stats"></section>
-
-  <section class="panel">
-    <h2>🛒 Place an Order</h2>
-    <p class="muted">Fill in your order details below.</p>
-
-    <form id="order-form">
-
-      <label>Select water product</label>
-      <select id="product-select" name="product" required></select>
-
-      <label>Quantity (gallons)</label>
-      <input type="number" name="quantity" min="1" max="100" value="1" required>
-
-      <label>Order type</label>
-      <select name="orderType" required>
-        <option value="Delivery">Delivery</option>
-        <option value="Pickup">Pick-up</option>
-      </select>
-
-      <label>Payment method</label>
-      <select name="payment" required>
-        <option value="Cash">Cash</option>
-        <option value="GCash">GCash</option>
-      </select>
-
-      <label>Delivery / Pickup address</label>
-      <textarea id="order-address" name="address" placeholder="Enter your address" required></textarea>
-
-      <div style="background:#e0f7fa;padding:20px;border-radius:15px">
-        <span style="color:#78909c">Order total</span>
-        <h2 id="order-total" style="margin:5px 0;color:#0e7490">₱0.00</h2>
+      <div class="tabs">
+        <button type="button" class="tab active" data-tab="login">Login</button>
+        <button type="button" class="tab" data-tab="register">Register</button>
       </div>
 
-      <button type="submit">💧 Place my order</button>
+      <form id="login-form">
+        <h2>Welcome Back!</h2>
+        <p>Login to your AquaTrack account.</p>
 
-    </form>
+        <label>Email</label>
+        <input type="email" name="email" required>
+
+        <label>Password</label>
+        <input type="password" name="password" required>
+
+        <button type="submit">Login</button>
+      </form>
+
+      <form id="register-form" class="hidden">
+        <h2>Create Account</h2>
+        <p>Join AquaTrack today!</p>
+
+        <label>Full Name</label>
+        <input type="text" name="name" required>
+
+        <label>Email</label>
+        <input type="email" name="email" required>
+
+        <label>Phone Number</label>
+        <input type="text" name="phone" required>
+
+        <label>Address</label>
+        <input type="text" name="address" required>
+
+        <label>Password</label>
+        <input type="password" name="password" minlength="6" required>
+
+        <button type="submit">Create Account</button>
+      </form>
+
+    </div>
+  </main>
+
+  <!-- CUSTOMER DASHBOARD -->
+  <section id="customer-view" class="hidden">
+    <div class="panel">
+      <h2>Hello, <span id="customer-name">Customer</span>!</h2>
+      <p>Welcome to AquaTrack.</p>
+
+      <div id="customer-stats"></div>
+
+      <form id="order-form">
+        <h3>Place Your Order</h3>
+
+        <label>Product</label>
+        <select id="product-select" name="product" required>
+          <option value="p1">Purified Water (5 Gallons)</option>
+          <option value="p2">Alkaline Water (5 Gallons)</option>
+          <option value="p3">Mineral Water (5 Gallons)</option>
+        </select>
+
+        <label>Quantity</label>
+        <input type="number" name="quantity" min="1" value="1" required>
+
+        <label>Order Type</label>
+        <select name="orderType" required>
+          <option value="Delivery">Delivery</option>
+          <option value="Pickup">Pick-up</option>
+        </select>
+
+        <label>Payment</label>
+        <select name="payment" required>
+          <option value="Cash">Cash</option>
+          <option value="GCash">GCash</option>
+        </select>
+
+        <label>Delivery Address</label>
+        <input type="text" id="order-address" name="address">
+
+        <p>Total: <span id="order-total">₱0</span></p>
+        <button type="submit">Place Order</button>
+      </form>
+
+      <h3>My Orders</h3>
+      <div id="customer-orders"></div>
+
+      <button id="logout-btn" type="button">Logout</button>
+    </div>
   </section>
 
-  <section class="panel">
-    <h2>📦 My Orders</h2>
-    <p class="muted">Check the status of your water orders.</p>
-    <div id="customer-orders"></div>
-  </section>
+  <!-- ADMIN DASHBOARD -->
+  <section id="admin-view" class="hidden">
+    <div class="panel">
+      <h2>Admin Dashboard</h2>
+      <div id="admin-stats"></div>
 
-</main>
-
-<!-- ADMIN DASHBOARD -->
-<main id="admin-view" class="hidden">
-
-  <section class="welcome-section">
-    <h2>Welcome, AquaTrack Admin! 👋</h2>
-    <p>Here's what's happening with your water station.</p>
-  </section>
-
-  <section id="admin-stats"></section>
-
-  <!-- ORDERS -->
-  <section class="panel">
-    <h2>📦 Customer Orders</h2>
-
-    <div class="admin-toolbar">
-      <input type="search" id="order-search" placeholder="Search customer or product...">
+      <h3>Orders</h3>
+      <input type="search" id="order-search" placeholder="Search orders">
 
       <select id="status-filter">
-        <option value="All">All statuses</option>
+        <option value="all">All Status</option>
         <option value="Pending">Pending</option>
-        <option value="Accepted">Accepted</option>
-        <option value="Preparing">Preparing</option>
+        <option value="Processing">Processing</option>
         <option value="Out for delivery">Out for delivery</option>
-        <option value="Ready for pickup">Ready for pickup</option>
-        <option value="Delivered">Delivered</option>
         <option value="Completed">Completed</option>
-        <option value="Rejected">Rejected</option>
+        <option value="Cancelled">Cancelled</option>
       </select>
-    </div>
 
-    <div style="overflow-x:auto">
-      <table>
-        <thead>
-          <tr>
-            <th>Order ID</th>
-            <th>Customer</th>
-            <th>Product</th>
-            <th>Payment</th>
-            <th>Total</th>
-            <th>Status</th>
-            <th>Update</th>
-          </tr>
-        </thead>
-        <tbody id="admin-orders"></tbody>
-      </table>
-    </div>
+      <div id="admin-orders"></div>
+      <div id="empty-admin" class="hidden">No orders yet.</div>
 
-    <div id="empty-admin" class="hidden">
-      No orders found.
+      <h3>Products</h3>
+      <div id="product-admin-list"></div>
+
+      <h3>Customers</h3>
+      <div id="customer-admin-list"></div>
+
+      <button id="logout-admin-btn" type="button">Logout</button>
     </div>
   </section>
 
-  <!-- PRODUCTS -->
-  <section class="panel">
-    <h2>💧 Water Products & Pricing</h2>
-    <p class="muted">Manage your water product prices.</p>
-    <div id="product-admin-list"></div>
-  </section>
+  <div id="toast"></div>
 
-  <!-- CUSTOMERS -->
-  <section class="panel">
-    <h2>👥 Registered Customers</h2>
-    <p class="muted">Your customer directory.</p>
-    <div id="customer-admin-list"></div>
-  </section>
-
-</main>
-
-<div id="toast"></div>
-
-<script type="module" src="js/app.js"></script>
-
+  <script type="module" src="js/app.js"></script>
 </body>
 </html>
