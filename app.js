@@ -22,7 +22,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyB_ob4H4sPagwhRR39WfdrCqWI-iklx4Hu4",
+  apiKey: "AIzaSyB_obH4sPagwhRR39WfdrCqWI-iklx4Hu4",
   authDomain: "aquatrack-98c27.firebaseapp.com",
   projectId: "aquatrack-98c27",
   storageBucket: "aquatrack-98c27.firebasestorage.app",
